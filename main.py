@@ -1,23 +1,45 @@
-from fastapi import FastAPI
-import random
+from fastapi import FastAPI, Path
+from pydantic import BaseModel, Field
 
-app = FastAPI()
+app = FastAPI(
+    title="User Demo API",
+    description="A simple demo API showing data validation and automatic documentation",
+    version="1.0.0"
+)
+
+# Define data model with validation
+class User(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, description="User's full name")
+    age: int = Field(..., ge=0, le=150, description="User's age")
+    email: str = Field(..., description="User's email address")
+    
+    class Config:
+        example = {
+            "name": "Francis Reid",
+            "age": 30,
+            "email": "francis@example.com"
+        }
 
 @app.get("/")
-def hello():
-    return {"message": "Hello, I am Francis Reid <3"}
+def root():
+    """Welcome endpoint"""
+    return {"message": "Welcome to User Demo API"}
 
-@app.get("/greet")
-def greet(name: str = "friend"):
-    return {"message": f"Hey {name}! You're Cute!!"}
+@app.post("/users/")
+def create_user(user: User):
+    """Create a new user with validation"""
+    return {
+        "status": "success",
+        "message": f"User {user.name} created successfully!",
+        "data": user
+    }
 
-@app.get("/compliment")
-def compliment(name: str = "friend"):
-    compliments = [
-        "You're amazing!",
-        "You light up the room!",
-        "Your code is top-notch!",
-        "You have great taste in music!",
-        "You are unstoppable!"
-    ]
-    return {"message": f"Hey {name}, {random.choice(compliments)}"}
+@app.get("/users/{user_id}")
+def get_user(user_id: int = Path(..., gt=0, description="The user ID")):
+    """Get user by ID"""
+    return {
+        "user_id": user_id,
+        "name": "Francis Reid",
+        "age": 30,
+        "email": "francis@example.com"
+    }
